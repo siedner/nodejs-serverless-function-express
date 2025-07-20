@@ -7,7 +7,8 @@ const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
 const axios = require('axios');
 const Joi = require('joi');
-const { default: serverlessExpress } = require('@vendia/serverless-express');
+const awsServerlessExpress = require('aws-serverless-express');
+const server = awsServerlessExpress.createServer(app);
 
 // Init Express
 const app = express();
@@ -114,5 +115,7 @@ app.use('*', (req, res) => {
   });
 });
 
-// Export Vercel-compatible handler
-module.exports = serverlessExpress({ app });
+
+module.exports = (req, res) => {
+  awsServerlessExpress.proxy(server, req, res);
+};
