@@ -5,26 +5,29 @@
       "runtime": "@vercel/node@2"
     }
   },
-  "routes": [
+  "rewrites": [
     {
-      "src": "/",
-      "dest": "/general.html"
+      "source": "/health",
+      "destination": "/api/health"
     },
     {
-      "src": "/health",
-      "dest": "/api/health"
+      "source": "/analyze",
+      "destination": "/api/analyze"
     },
     {
-      "src": "/analyze",
-      "dest": "/api/analyze"
+      "source": "/batch-analyze",
+      "destination": "/api/batch-analyze"
     },
     {
-      "src": "/batch-analyze",
-      "dest": "/api/batch-analyze"
-    },
+      "source": "/analyze-image",
+      "destination": "/api/analyze-image"
+    }
+  ],
+  "redirects": [
     {
-      "src": "/analyze-image",
-      "dest": "/api/analyze-image"
+      "source": "/",
+      "destination": "/general.html",
+      "permanent": false
     }
   ],
   "headers": [
