@@ -491,13 +491,3 @@ app.use(function(err, req, res, next) {
     code: 'SERVER_ERROR'
   });
 });
-
-const listener = app.listen(process.env.PORT || 3000, function() {
-  console.log('🚀 Secure Cloudinary Vision API listening on port ' + listener.address().port);
-  console.log('🔒 Security features active:');
-  console.log('   📊 Rate limiting: ' + SECURITY_CONFIG.rateLimit.max + ' requests per ' + (SECURITY_CONFIG.rateLimit.windowMs/1000) + 's');
-  console.log('   🔑 API keys: ' + (SECURITY_CONFIG.apiKeys.size > 0 ? SECURITY_CONFIG.apiKeys.size + ' configured' : 'NONE (⚠️  INSECURE)'));
-  console.log('   🌐 CORS origins: ' + SECURITY_CONFIG.allowedOrigins.length);
-  console.log('   🛡️  Input validation: ENABLED');
-  console.log('   📝 Request logging: ENABLED');
-});
