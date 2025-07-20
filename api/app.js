@@ -8,7 +8,7 @@ const axios = require('axios');
 const Joi = require('joi');
 
 const app = express();
-const upload = multer({ dest: 'uploads/' });
+const upload = multer({ storage: multer.memoryStorage() });
 
 // Body parsing
 app.use(bodyParser.json({ limit: '10mb' }));
