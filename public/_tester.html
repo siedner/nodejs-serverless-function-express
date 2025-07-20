@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Analysis</title>
+    <script>
+        async function analyzeImage(event) {
+            event.preventDefault();
+
+            const imageUrl = document.getElementById('imageUrl').value;
+            const analysisType = document.getElementById('analysisType').value;
+            const prompts = document.getElementById('prompts').value.split('\n');
+            const tags = document.getElementById('tags').value.split('\n').map(tag => {
+                const parts = tag.split('|');
+                return { name: parts[0], description: parts[1] };
+            });
+            const multiLabel = document.getElementById('multiLabel').checked;
+
+            const payload = {
+                imageUrl: imageUrl,
+                analysis_type: analysisType,
+                prompts: prompts.length > 0 ? prompts : undefined,
+                tags: tags.length > 0 ? tags : undefined,
+                multi_label: multiLabel
+            };
+
+            try {
+                const response = await fetch('/analyze', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                document.getElementById('result').textContent = JSON.stringify(result, null, 2);
+            } catch (error) {
+                console.error('Error analyzing image:', error);
+                document.getElementById('result').textContent = 'Error analyzing image.';
+            }
+        }
+    </script>
+</head>
+<body>
+    <h1>Image Analysis</h1>
+    <form onsubmit="analyzeImage(event)">
+        <div>
+            <label for="imageUrl">Image URL:</label>
+            <input type="text" id="imageUrl" name="imageUrl" required>
+        </div>
+        <div>
+            <label for="analysisType">Analysis Type:</label>
+            <select id="analysisType" name="analysisType" required>
+                <option value="ai_vision_general">AI Vision General</option>
+                <option value="ai_vision_moderation">AI Vision Moderation</option>
+                <option value="ai_vision_tagging">AI Vision Tagging</option>
+            </select>
+        </div>
+        <div>
+            <label for="prompts">Prompts (one per line):</label>
+            <textarea id="prompts" name="prompts"></textarea>
+        </div>
+        <div>
+            <label for="tags">Tags (name|description per line):</label>
+            <textarea id="tags" name="tags"></textarea>
+        </div>
+        <div>
+            <label for="multiLabel">Multi-Label:</label>
+            <input type="checkbox" id="multiLabel" name="multiLabel">
+        </div>
+        <button type="submit">Analyze</button>
+    </form>
+    <h2>Result</h2>
+    <pre id="result"></pre>
+</body>
+</html>

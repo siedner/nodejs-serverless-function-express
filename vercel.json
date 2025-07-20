@@ -1,0 +1,49 @@
+{
+  "version": 2,
+  "functions": {
+    "api/*.js": {
+      "runtime": "@vercel/node@2"
+    }
+  },
+  "routes": [
+    {
+      "src": "/",
+      "dest": "/general.html"
+    },
+    {
+      "src": "/health",
+      "dest": "/api/health"
+    },
+    {
+      "src": "/analyze",
+      "dest": "/api/analyze"
+    },
+    {
+      "src": "/batch-analyze",
+      "dest": "/api/batch-analyze"
+    },
+    {
+      "src": "/analyze-image",
+      "dest": "/api/analyze-image"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET, POST, OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "Content-Type"
+        }
+      ]
+    }
+  ]
+} 
