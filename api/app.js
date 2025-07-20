@@ -17,7 +17,7 @@ const upload = multer({ dest: 'uploads/' });
 // Security configuration
 const SECURITY_CONFIG = {
   apiKeys: new Set((process.env.API_KEYS || '').split(',').filter(function(key) { return key.trim(); })),
-  allowedOrigins: (process.env.ALLOWED_ORIGINS || 'http://localhost:3000,http://localhost:5173').split(','),
+  allowedOrigins: (process.env.ALLOWED_ORIGINS || 'http://localhost:3000,http://localhost:5173,https://ai-vision-demo.netlify.app').split(','),
   rateLimit: {
     windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000'), // 15 minutes
     max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100'),
