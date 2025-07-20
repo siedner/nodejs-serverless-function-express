@@ -491,3 +491,5 @@ app.use(function(err, req, res, next) {
     code: 'SERVER_ERROR'
   });
 });
+
+module.exports = app;
