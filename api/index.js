@@ -1,28 +1,31 @@
-require('dotenv').config();
+// api/index.js
 
+require('dotenv').config();
 const express = require('express');
 const bodyParser = require('body-parser');
 const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
 const axios = require('axios');
 const Joi = require('joi');
+const { default: serverlessExpress } = require('@vendia/serverless-express');
 
+// Init Express
 const app = express();
 const upload = multer({ storage: multer.memoryStorage() });
 
-// Body parsing
+// Middleware
 app.use(bodyParser.json({ limit: '10mb' }));
 app.use(express.static('public'));
 
-// Cloudinary configuration
+// Cloudinary setup
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-// Health check endpoint
-app.get('/health', function(req, res) {
+// Health check
+app.get('/health', (req, res) => {
   res.status(200).json({
     status: 'healthy',
     timestamp: new Date().toISOString(),
@@ -30,15 +33,14 @@ app.get('/health', function(req, res) {
   });
 });
 
-// Redirect from root to general.html
-app.get('/', function(req, res) {
+// Redirect root
+app.get('/', (req, res) => {
   res.redirect('/general.html');
 });
 
-// Validation schema
+// Joi validation schema
 const analyzeSchema = Joi.object({
-  imageUrl: Joi.string().uri({ scheme: ['http', 'https'] }).required()
-    .pattern(/^https?:\/\//, 'valid URL'),
+  imageUrl: Joi.string().uri().required(),
   analysis_type: Joi.string().valid('ai_vision_general', 'ai_vision_moderation', 'ai_vision_tagging').required(),
   prompts: Joi.array().items(Joi.string().max(1000)).max(10).when('analysis_type', {
     not: 'ai_vision_tagging',
@@ -57,51 +59,41 @@ const analyzeSchema = Joi.object({
 });
 
 function validateInput(schema) {
-  return function(req, res, next) {
-    const validation = schema.validate(req.body);
-    if (validation.error) {
+  return (req, res, next) => {
+    const { error, value } = schema.validate(req.body);
+    if (error) {
       return res.status(400).json({
         error: 'Validation Error',
-        message: validation.error.details[0].message,
+        message: error.details[0].message,
         code: 'INVALID_INPUT'
       });
     }
-    req.body = validation.value;
+    req.body = value;
     next();
   };
 }
 
-// Main analyze endpoint
 app.post('/analyze', validateInput(analyzeSchema), async (req, res) => {
   const { imageUrl, analysis_type, prompts, tags, multi_label } = req.body;
 
   let parameters = {};
-  switch (analysis_type) {
-    case 'ai_vision_general':
-      parameters = { prompts };
-      break;
-    case 'ai_vision_moderation':
-      parameters = { rejection_questions: prompts };
-      break;
-    case 'ai_vision_tagging':
-      parameters = {
-        tag_definitions: tags.map(tag => ({ name: tag.name, description: tag.description })),
-        ...(multi_label !== undefined && { multi_label })
-      };
-      break;
+  if (analysis_type === 'ai_vision_general') parameters = { prompts };
+  if (analysis_type === 'ai_vision_moderation') parameters = { rejection_questions: prompts };
+  if (analysis_type === 'ai_vision_tagging') {
+    parameters = {
+      tag_definitions: tags.map(tag => ({ name: tag.name, description: tag.description })),
+      ...(multi_label !== undefined && { multi_label })
+    };
   }
 
-  const payload = {
-    source: { uri: imageUrl },
-    ...parameters
-  };
+  const payload = { source: { uri: imageUrl }, ...parameters };
 
   try {
-    const response = await axios.post(
-      `https://${process.env.CLOUDINARY_API_KEY}:${process.env.CLOUDINARY_API_SECRET}@api.cloudinary.com/v2/analysis/${process.env.CLOUDINARY_CLOUD_NAME}/analyze/${analysis_type}`,
-      payload,
-      { headers: { 'Content-Type': 'application/json' }, timeout: 30000 }
-    );
+    const url = `https://${process.env.CLOUDINARY_API_KEY}:${process.env.CLOUDINARY_API_SECRET}@api.cloudinary.com/v2/analysis/${process.env.CLOUDINARY_CLOUD_NAME}/analyze/${analysis_type}`;
+    const response = await axios.post(url, payload, {
+      headers: { 'Content-Type': 'application/json' },
+      timeout: 30000
+    });
     res.json(response.data);
   } catch (error) {
     console.error('❌ Analysis failed:', error.response?.data || error.message);
@@ -114,7 +106,7 @@ app.post('/analyze', validateInput(analyzeSchema), async (req, res) => {
 });
 
 // Catch-all 404
-app.use('*', function(req, res) {
+app.use('*', (req, res) => {
   res.status(404).json({
     error: 'Not Found',
     message: 'The requested resource was not found',
@@ -122,4 +114,5 @@ app.use('*', function(req, res) {
   });
 });
 
-module.exports = app;
+// Export Vercel-compatible handler
+module.exports = serverlessExpress({ app });

@@ -1,29 +1,32 @@
 {
   "name": "cloudinary-analyzer",
   "version": "1.0.0",
-  "description": "Vision analysis API powered by Cloudinary and AI",
-  "main": "dev.js",
+  "description": "Cloudinary AI image analyzer with Vercel Serverless Functions",
+  "main": "api/index.js",
   "scripts": {
-    "dev": "nodemon dev.js",
-    "start": "node dev.js"
+    "dev": "vercel dev",
+    "start": "node api/index.js"
   },
   "dependencies": {
-    "axios": "^1.6.8",
+    "@vendia/serverless-express": "^4.14.0",
+    "axios": "^1.6.0",
     "body-parser": "^1.20.2",
-    "cloudinary": "^1.41.3",
-    "cors": "^2.8.5",
-    "dotenv": "^16.4.5",
-    "express": "^4.19.2",
-    "express-rate-limit": "^7.0.0",
-    "helmet": "^6.1.8",
+    "cloudinary": "^1.40.0",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
     "joi": "^17.10.1",
-    "morgan": "^1.10.0",
-    "multer": "^1.4.5-lts.1"
+    "multer": "^1.4.5"
   },
-  "devDependencies": {
-    "nodemon": "^3.1.0"
-  },
+  "devDependencies": {},
   "engines": {
-    "node": "20.x"
-  }
+    "node": ">=18"
+  },
+  "keywords": [
+    "cloudinary",
+    "vercel",
+    "express",
+    "ai",
+    "serverless"
+  ],
+  "license": "MIT"
 }
