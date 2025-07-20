@@ -1,47 +1,42 @@
-// api/index.js
-
 require('dotenv').config();
+
 const express = require('express');
+const awsServerlessExpress = require('aws-serverless-express');
 const bodyParser = require('body-parser');
 const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
 const axios = require('axios');
 const Joi = require('joi');
-const awsServerlessExpress = require('aws-serverless-express');
-const server = awsServerlessExpress.createServer(app);
 
-// Init Express
-const app = express();
+const app = express(); // ✅ make sure this comes before using `app`
+
 const upload = multer({ storage: multer.memoryStorage() });
-
-// Middleware
 app.use(bodyParser.json({ limit: '10mb' }));
 app.use(express.static('public'));
 
-// Cloudinary setup
+// Cloudinary config
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-// Health check
+// Routes
 app.get('/health', (req, res) => {
   res.status(200).json({
     status: 'healthy',
     timestamp: new Date().toISOString(),
-    version: '1.0.0',
+    version: '1.0.0'
   });
 });
 
-// Redirect root
 app.get('/', (req, res) => {
   res.redirect('/general.html');
 });
 
-// Joi validation schema
+// Validation schema
 const analyzeSchema = Joi.object({
-  imageUrl: Joi.string().uri().required(),
+  imageUrl: Joi.string().uri({ scheme: ['http', 'https'] }).required(),
   analysis_type: Joi.string().valid('ai_vision_general', 'ai_vision_moderation', 'ai_vision_tagging').required(),
   prompts: Joi.array().items(Joi.string().max(1000)).max(10).when('analysis_type', {
     not: 'ai_vision_tagging',
@@ -74,20 +69,30 @@ function validateInput(schema) {
   };
 }
 
+// Analyze endpoint
 app.post('/analyze', validateInput(analyzeSchema), async (req, res) => {
   const { imageUrl, analysis_type, prompts, tags, multi_label } = req.body;
 
   let parameters = {};
-  if (analysis_type === 'ai_vision_general') parameters = { prompts };
-  if (analysis_type === 'ai_vision_moderation') parameters = { rejection_questions: prompts };
-  if (analysis_type === 'ai_vision_tagging') {
-    parameters = {
-      tag_definitions: tags.map(tag => ({ name: tag.name, description: tag.description })),
-      ...(multi_label !== undefined && { multi_label })
-    };
+  switch (analysis_type) {
+    case 'ai_vision_general':
+      parameters = { prompts };
+      break;
+    case 'ai_vision_moderation':
+      parameters = { rejection_questions: prompts };
+      break;
+    case 'ai_vision_tagging':
+      parameters = {
+        tag_definitions: tags.map(tag => ({ name: tag.name, description: tag.description })),
+        ...(multi_label !== undefined && { multi_label })
+      };
+      break;
   }
 
-  const payload = { source: { uri: imageUrl }, ...parameters };
+  const payload = {
+    source: { uri: imageUrl },
+    ...parameters
+  };
 
   try {
     const url = `https://${process.env.CLOUDINARY_API_KEY}:${process.env.CLOUDINARY_API_SECRET}@api.cloudinary.com/v2/analysis/${process.env.CLOUDINARY_CLOUD_NAME}/analyze/${analysis_type}`;
@@ -115,7 +120,6 @@ app.use('*', (req, res) => {
   });
 });
 
-
-module.exports = (req, res) => {
-  awsServerlessExpress.proxy(server, req, res);
-};
+//  Export server for Vercel
+const server = awsServerlessExpress.createServer(app);
+module.exports = (req, res) => awsServerlessExpress.proxy(server, req, res);
